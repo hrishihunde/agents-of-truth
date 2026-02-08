@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { createPublicClient, http } from 'viem';
 import { normalize } from 'viem/ens';
 import { mainnet } from 'viem/chains';

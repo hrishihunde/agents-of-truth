@@ -8,7 +8,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { executeAction, type ExecuteResult, type ENSPolicy } from '../../src/lib/api';
+import { executeAction, type ExecuteResult } from '../../src/lib/api';
 import { PolicyCard } from '../../src/components/PolicyCard';
 import { ProofViewer } from '../../src/components/ProofViewer';
 import { LogStream } from '../../src/components/LogStream';
@@ -125,8 +125,8 @@ export default function ExecutePage() {
                                             onClick={() => setActionType(action.value)}
                                             disabled={isExecuting}
                                             className={`p-3 rounded-lg border transition-all text-left ${actionType === action.value
-                                                    ? 'bg-blue-900/50 border-blue-500 text-blue-300'
-                                                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                                                ? 'bg-blue-900/50 border-blue-500 text-blue-300'
+                                                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
                                                 }`}
                                         >
                                             <span className="text-xl">{action.icon}</span>
@@ -187,8 +187,8 @@ export default function ExecutePage() {
                                 onClick={handleExecute}
                                 disabled={isExecuting || !ensName || !amount}
                                 className={`w-full py-4 rounded-lg font-semibold text-lg transition-all ${isExecuting
-                                        ? 'bg-gray-700 text-gray-400 cursor-wait'
-                                        : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white'
+                                    ? 'bg-gray-700 text-gray-400 cursor-wait'
+                                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white'
                                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
                                 {isExecuting ? (
@@ -239,8 +239,8 @@ export default function ExecutePage() {
                             <div className="space-y-6">
                                 {/* Success/Failure Banner */}
                                 <div className={`p-4 rounded-xl border ${result.success
-                                        ? 'bg-green-900/30 border-green-700 text-green-300'
-                                        : 'bg-red-900/30 border-red-700 text-red-300'
+                                    ? 'bg-green-900/30 border-green-700 text-green-300'
+                                    : 'bg-red-900/30 border-red-700 text-red-300'
                                     }`}>
                                     <div className="flex items-center gap-3">
                                         <span className="text-2xl">{result.success ? '✅' : '❌'}</span>

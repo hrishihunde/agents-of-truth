@@ -97,7 +97,7 @@ export default function DashboardPage() {
             {/* Health Status */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg">
               <span className={`w-2 h-2 rounded-full ${health?.status === 'healthy' ? 'bg-green-500' :
-                  health?.status === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
+                health?.status === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
                 }`} />
               <span className="text-sm text-gray-400">
                 {health?.status || 'Connecting...'}
@@ -162,7 +162,7 @@ export default function DashboardPage() {
               {/* Validation hint */}
               {ensName && !isValidENSName(ensName) && (
                 <p className="mt-2 text-sm text-yellow-500">
-                  ⚠️ This doesn't look like a valid ENS name
+                  ⚠️ This doesn&apos;t look like a valid ENS name
                 </p>
               )}
 

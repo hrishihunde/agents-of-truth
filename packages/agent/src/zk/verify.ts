@@ -7,6 +7,7 @@
  * 2. The public signals match the claimed values
  */
 
+// @ts-expect-error - snarkjs has no TypeScript declarations
 import * as snarkjs from 'snarkjs';
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';

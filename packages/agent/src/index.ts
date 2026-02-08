@@ -34,7 +34,7 @@ const startTime = Date.now();
 // Express Setup
 // ================================
 
-const app = express();
+const app: express.Application = express();
 
 // Middleware
 app.use(cors({

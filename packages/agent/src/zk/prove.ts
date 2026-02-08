@@ -8,7 +8,9 @@
  * The proof is generated using the compiled circuit and proving key.
  */
 
+// @ts-expect-error - snarkjs has no TypeScript declarations
 import * as snarkjs from 'snarkjs';
+// @ts-expect-error - circomlibjs has no TypeScript declarations
 import { buildPoseidon } from 'circomlibjs';
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';

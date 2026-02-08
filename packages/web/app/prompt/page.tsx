@@ -75,8 +75,8 @@ function PromptPageContent() {
     const [deliverable, setDeliverable] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const [nodes, setNodes, onNodesChange] = useNodesState([]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
     // Build React Flow nodes from task steps
     useEffect(() => {
@@ -329,7 +329,7 @@ The agent has verified that your current policy configuration complies with all 
                         elementsSelectable={false}
                     >
                         <Background color="#27272a" gap={20} />
-                        <Controls className="!bg-zinc-900 !border-zinc-700 [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!text-white [&>button:hover]:!bg-zinc-700" />
+                        <Controls className="bg-zinc-900! border-zinc-700! [&>button]:bg-zinc-800! [&>button]:border-zinc-700! [&>button]:text-white! [&>button:hover]:bg-zinc-700!" />
                     </ReactFlow>
                 </div>
             </div>

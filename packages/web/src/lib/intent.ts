@@ -3,7 +3,7 @@ import { type Address } from 'viem';
 export interface Intent {
     task: string;
     signer: Address;
-    timestamp: number;
+    timestamp: bigint;
     policyENS: string;
 }
 
@@ -26,7 +26,7 @@ export function createIntent(task: string, signer: Address, policyENS: string = 
     return {
         task,
         signer,
-        timestamp: Math.floor(Date.now() / 1000),
+        timestamp: BigInt(Math.floor(Date.now() / 1000)),
         policyENS,
     };
 }

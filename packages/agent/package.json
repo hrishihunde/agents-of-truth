@@ -9,6 +9,8 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:zk": "tsx src/test-zk.ts",
+    "test:ens": "tsx src/test-ens.ts",
     "zk:compile": "tsx src/compile-circuits.ts",
     "zk:setup": "bash src/zk/setup.sh",
     "zk:test": "tsx src/zk/test.ts"

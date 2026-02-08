@@ -1,217 +1,224 @@
-/**
- * @fileoverview Dashboard Page
- * 
- * Main page showing:
- * - ENS name input and policy display
- * - Agent status and health
- * - React Flow visualization of agent actions
- */
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { AgentFlow, type FlowNodeStatus } from '../src/components/AgentFlow';
-import { PolicyCard } from '../src/components/PolicyCard';
-import { LogStream } from '../src/components/LogStream';
-import { getHealth, getPolicy, subscribeToEvents, type ENSPolicy, type LogEntry, type ExecutionEvent } from '../src/lib/api';
-import { isValidENSName } from '../src/lib/ens';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
+import { useRouter } from 'next/navigation';
+import { getAllTasks, type Task } from '@/lib/tasks';
+import {
+  Brain,
+  Shield,
+  Zap,
+  ArrowRight,
+  Lock,
+  FileText,
+  Plane,
+  CheckCircle2
+} from 'lucide-react';
 
-export default function DashboardPage() {
-  // State
-  const [ensName, setEnsName] = useState('');
-  const [policy, setPolicy] = useState<ENSPolicy | null>(null);
-  const [isLoadingPolicy, setIsLoadingPolicy] = useState(false);
-  const [policyError, setPolicyError] = useState<string | null>(null);
-  const [health, setHealth] = useState<{ status: string; version: string } | null>(null);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [nodeUpdates, setNodeUpdates] = useState<Array<{ nodeId: string; status: FlowNodeStatus; data?: Record<string, unknown> }>>([]);
-  const [useMock, setUseMock] = useState(true);
-
-  // Fetch health on mount
-  useEffect(() => {
-    getHealth()
-      .then(setHealth)
-      .catch(() => setHealth({ status: 'offline', version: 'unknown' }));
-  }, []);
-
-  // Subscribe to SSE events
-  useEffect(() => {
-    const unsubscribe = subscribeToEvents(
-      (event: ExecutionEvent) => {
-        if (event.type === 'log') {
-          setLogs((prev) => [...prev, event.data as LogEntry].slice(-100));
-        } else if (event.type === 'node-update') {
-          const update = event.data as { nodeId: string; status: FlowNodeStatus; data?: Record<string, unknown> };
-          setNodeUpdates((prev) => {
-            const filtered = prev.filter((u) => u.nodeId !== update.nodeId);
-            return [...filtered, update];
-          });
-        }
-      },
-      (error) => {
-        console.error('SSE error:', error);
-      }
-    );
-
-    return unsubscribe;
-  }, []);
-
-  // Lookup ENS policy
-  const handleLookup = useCallback(async () => {
-    if (!ensName.trim()) return;
-
-    setIsLoadingPolicy(true);
-    setPolicyError(null);
-    setPolicy(null);
-
-    try {
-      const result = await getPolicy(ensName, useMock);
-      setPolicy(result);
-    } catch (error) {
-      setPolicyError(error instanceof Error ? error.message : 'Failed to fetch policy');
-    } finally {
-      setIsLoadingPolicy(false);
-    }
-  }, [ensName, useMock]);
-
-  // Reset flow visualization
-  const handleReset = useCallback(() => {
-    setNodeUpdates([]);
-    setLogs([]);
-  }, []);
+function TaskCard({ task, disabled }: { task: Task; disabled: boolean }) {
+  const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 text-transparent bg-clip-text">
-              🤖 Payments Agent
-            </h1>
-            <span className="text-sm text-gray-500">zkENS • Arc Integration</span>
-          </div>
+    <button
+      onClick={() => !disabled && router.push(`/prompt?task=${task.id}`)}
+      disabled={disabled}
+      className={`group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-left transition-all duration-300 ${disabled
+          ? 'cursor-not-allowed opacity-50'
+          : 'hover:border-indigo-500/50 hover:bg-zinc-900 hover:shadow-lg hover:shadow-indigo-500/10'
+        }`}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
 
-          <div className="flex items-center gap-4">
-            {/* Health Status */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 rounded-lg">
-              <span className={`w-2 h-2 rounded-full ${health?.status === 'healthy' ? 'bg-green-500' :
-                health?.status === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
-                }`} />
-              <span className="text-sm text-gray-400">
-                {health?.status || 'Connecting...'}
-              </span>
-              {health?.version && (
-                <span className="text-xs text-gray-600">v{health.version}</span>
-              )}
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex gap-2">
-              <Link href="/execute" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors">
-                Execute Action
-              </Link>
-              <Link href="/proof" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
-                Proofs
-              </Link>
-            </nav>
-          </div>
+      <div className="relative z-10">
+        <div className="mb-4 flex items-center justify-between">
+          <span className="text-3xl">{task.icon}</span>
+          {task.estimatedCost > 0 && (
+            <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-400">
+              ~${task.estimatedCost.toFixed(2)} x402
+            </span>
+          )}
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* ENS Lookup Section */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <span>🔍</span> ENS Policy Lookup
-          </h2>
+        <h3 className="mb-2 text-lg font-semibold text-white">{task.name}</h3>
+        <p className="mb-4 text-sm text-zinc-400 line-clamp-2">{task.description}</p>
 
-          <div className="flex gap-4 items-start">
-            <div className="flex-1 max-w-xl">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={ensName}
-                  onChange={(e) => setEnsName(e.target.value)}
-                  placeholder="Enter ENS name (e.g., payments-agent.eth)"
-                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 text-white placeholder-gray-500"
-                  onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
-                />
-                <button
-                  onClick={handleLookup}
-                  disabled={isLoadingPolicy || !ensName.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:from-gray-700 disabled:to-gray-700 rounded-lg font-medium transition-all disabled:cursor-not-allowed"
-                >
-                  {isLoadingPolicy ? 'Loading...' : 'Lookup'}
-                </button>
-              </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-zinc-500">{task.estimatedTime}</span>
+          <ArrowRight className={`h-4 w-4 transition-transform ${disabled ? 'text-zinc-600' : 'text-indigo-400 group-hover:translate-x-1'}`} />
+        </div>
+      </div>
+    </button>
+  );
+}
 
-              {/* Mock Mode Toggle */}
-              <label className="flex items-center gap-2 mt-2 text-sm text-gray-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useMock}
-                  onChange={(e) => setUseMock(e.target.checked)}
-                  className="w-4 h-4 rounded bg-gray-700 border-gray-600"
-                />
-                Use mock data (for testing without real ENS)
-              </label>
+function FeatureCard({ icon: Icon, title, description }: { icon: typeof Brain; title: string; description: string }) {
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10">
+        <Icon className="h-5 w-5 text-indigo-400" />
+      </div>
+      <h3 className="mb-2 font-semibold text-white">{title}</h3>
+      <p className="text-sm text-zinc-400">{description}</p>
+    </div>
+  );
+}
 
-              {/* Validation hint */}
-              {ensName && !isValidENSName(ensName) && (
-                <p className="mt-2 text-sm text-yellow-500">
-                  ⚠️ This doesn&apos;t look like a valid ENS name
-                </p>
-              )}
+export default function LandingPage() {
+  const { isConnected } = useAccount();
+  const tasks = getAllTasks();
 
-              {/* Error */}
-              {policyError && (
-                <p className="mt-2 text-sm text-red-400">
-                  ❌ {policyError}
-                </p>
-              )}
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 z-50 w-full border-b border-zinc-800/50 bg-black/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500">
+              <Brain className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-semibold">Agents of Truth</span>
+          </div>
+          <ConnectButton
+            showBalance={false}
+            chainStatus="none"
+            accountStatus={{
+              smallScreen: 'avatar',
+              largeScreen: 'full',
+            }}
+          />
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent" />
+
+        <div className="relative mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-300">
+              <Lock className="h-4 w-4" />
+              Policy-Governed Autonomous Agents
             </div>
 
-            {/* Policy Card */}
-            {(policy || isLoadingPolicy) && (
-              <div className="w-80">
-                <PolicyCard
-                  ensName={policy?.ensName || ensName}
-                  maxSpendUSDC={policy?.maxSpendUSDC || 0}
-                  allowedActions={policy?.allowedActions || []}
-                  policyVersion={policy?.policyVersion || ''}
-                  policyHash={policy?.policyHash}
-                  isLoading={isLoadingPolicy}
-                />
+            <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight md:text-6xl">
+              Autonomous Agents,
+              <br />
+              <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                Governed by Policy
+              </span>
+            </h1>
+
+            <p className="mb-8 text-lg text-zinc-400 md:text-xl">
+              Execute complex tasks through autonomous agents bound by ENS policies.
+              <br className="hidden md:block" />
+              Zero-knowledge proofs attest compliance. You sign intent, not transactions.
+            </p>
+
+            {!isConnected && (
+              <div className="flex justify-center">
+                <ConnectButton />
               </div>
             )}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Agent Flow Visualization */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <span>⚡</span> Agent Action Flow
-          </h2>
-          <AgentFlow nodeUpdates={nodeUpdates} onReset={handleReset} />
-        </section>
+      {/* Tasks Section */}
+      <section className="py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold">Select a Task</h2>
+            <p className="text-zinc-400">
+              {isConnected
+                ? 'Choose a demo task to see the agent in action'
+                : 'Connect your wallet to launch an agent'
+              }
+            </p>
+          </div>
 
-        {/* Logs Section */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <span>📋</span> Activity Logs
-          </h2>
-          <LogStream logs={logs} maxHeight="300px" />
-        </section>
-      </main>
+          <div className="grid gap-6 md:grid-cols-3">
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} disabled={!isConnected} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="border-t border-zinc-800 py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold">How It Works</h2>
+            <p className="text-zinc-400">A new paradigm for agent authorization</p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            <FeatureCard
+              icon={Shield}
+              title="ENS Policy Governance"
+              description="Agent behavior is defined by ENS text records. Policies specify spending limits, allowed actions, and compliance rules."
+            />
+            <FeatureCard
+              icon={FileText}
+              title="Intent Signing"
+              description="You sign an intent message, not a transaction. The agent decides execution details within policy bounds."
+            />
+            <FeatureCard
+              icon={Zap}
+              title="Zero-Knowledge Proofs"
+              description="Every action generates a ZK proof attesting policy compliance. Amount privacy with verifiable bounds."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Model */}
+      <section className="border-t border-zinc-800 py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-8 text-center text-3xl font-bold">The Trust Model</h2>
+
+            <div className="space-y-6">
+              <div className="flex items-start gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-green-400" />
+                <div>
+                  <h3 className="mb-1 font-semibold text-white">Wallets Authorize Intent</h3>
+                  <p className="text-sm text-zinc-400">Your wallet signs permission for a specific task. It never signs actual transactions or approves token transfers.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-green-400" />
+                <div>
+                  <h3 className="mb-1 font-semibold text-white">ENS Defines Limits</h3>
+                  <p className="text-sm text-zinc-400">Policy constraints are stored on-chain in ENS text records. Whoever controls the ENS name controls the policy.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-green-400" />
+                <div>
+                  <h3 className="mb-1 font-semibold text-white">Agent Enforces Policy</h3>
+                  <p className="text-sm text-zinc-400">The agent (OpenClaw) validates all actions against policy before execution. Violations are rejected.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-green-400" />
+                <div>
+                  <h3 className="mb-1 font-semibold text-white">ZK Proves Compliance</h3>
+                  <p className="text-sm text-zinc-400">Groth16 proofs attest that payments stayed within maxSpend without revealing exact amounts.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 bg-gray-900 mt-8">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between text-sm text-gray-500">
-          <span>Payments Agent with zkENS Proof System</span>
-          <span>Built for autonomous agent operations</span>
+      <footer className="border-t border-zinc-800 py-8">
+        <div className="mx-auto max-w-6xl px-6 text-center text-sm text-zinc-500">
+          <p>Agents of Truth • Policy-Governed Autonomous Agents</p>
         </div>
       </footer>
     </div>

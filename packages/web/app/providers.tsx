@@ -1,30 +1,36 @@
-/**
- * @fileoverview API Providers
- * 
- * React Query provider for API data fetching.
- */
-
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import { WagmiProvider } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
+import '@rainbow-me/rainbowkit/styles.css';
 
-export function Providers({ children }: { children: ReactNode }) {
-    const [queryClient] = useState(
-        () =>
-            new QueryClient({
-                defaultOptions: {
-                    queries: {
-                        staleTime: 30 * 1000, // 30 seconds
-                        refetchOnWindowFocus: false,
-                    },
-                },
-            })
-    );
+const config = getDefaultConfig({
+    appName: 'Agents of Truth',
+    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
+    chains: [mainnet],
+    ssr: true,
+});
 
+const queryClient = new QueryClient();
+
+export function Providers({ children }: { children: React.ReactNode }) {
     return (
-        <QueryClientProvider client={queryClient}>
-            {children}
-        </QueryClientProvider>
+        <WagmiProvider config={config}>
+            <QueryClientProvider client={queryClient}>
+                <RainbowKitProvider
+                    theme={darkTheme({
+                        accentColor: '#6366f1',
+                        accentColorForeground: 'white',
+                        borderRadius: 'medium',
+                        fontStack: 'system',
+                    })}
+                    modalSize="compact"
+                >
+                    {children}
+                </RainbowKitProvider>
+            </QueryClientProvider>
+        </WagmiProvider>
     );
 }

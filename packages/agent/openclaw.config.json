@@ -1,0 +1,60 @@
+{
+    "name": "agents-of-truth",
+    "version": "1.0.0",
+    "description": "Agents of Truth - zkENS Payment Agent Backend",
+    "agent": {
+        "name": "Agents of Truth",
+        "description": "Autonomous payment agent with ENS-derived policies and zk-SNARK compliance proofs",
+        "version": "1.0.0"
+    },
+    "capabilities": {
+        "ens": {
+            "enabled": true,
+            "textRecords": [
+                "agent.maxSpendUSDC",
+                "agent.allowedActions",
+                "agent.policyVersion"
+            ],
+            "resolver": "runtime",
+            "caching": {
+                "enabled": true,
+                "ttl": 300000
+            }
+        },
+        "zkProofs": {
+            "enabled": true,
+            "protocol": "groth16",
+            "curve": "bn128",
+            "circuit": "src/zk/circuit.circom",
+            "library": "snarkjs"
+        },
+        "payments": {
+            "enabled": true,
+            "provider": "arc",
+            "token": "USDC",
+            "status": "stub"
+        }
+    },
+    "api": {
+        "endpoints": [
+            "/health",
+            "/policy/:ensName",
+            "/execute",
+            "/proof",
+            "/verify",
+            "/history",
+            "/events"
+        ],
+        "cors": {
+            "origins": [
+                "http://localhost:3000"
+            ],
+            "methods": [
+                "GET",
+                "POST",
+                "OPTIONS"
+            ]
+        }
+    },
+    "repository": "https://github.com/hrishihunde/agents-of-truth"
+}

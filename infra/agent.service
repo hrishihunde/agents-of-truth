@@ -1,0 +1,103 @@
+# ================================
+# Systemd Service for Payments Agent
+# ================================
+#
+# This service file runs the payments agent as a systemd service.
+#
+# Installation:
+#   sudo cp agent.service /etc/systemd/system/payments-agent.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable payments-agent
+#   sudo systemctl start payments-agent
+#
+# Commands:
+#   sudo systemctl status payments-agent   # Check status
+#   sudo systemctl restart payments-agent  # Restart
+#   sudo journalctl -u payments-agent -f   # View logs
+#
+
+[Unit]
+Description=Agents-of-Truth
+Documentation=https://github.com/hrishihunde/agents-of-truth
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# ================================
+# User & Working Directory
+# ================================
+User=payments-agent
+Group=payments-agent
+WorkingDirectory=/opt/payments-agent
+
+# ================================
+# Environment
+# ================================
+Environment=NODE_ENV=production
+Environment=PORT=3001
+EnvironmentFile=/opt/payments-agent/.env
+
+# ================================
+# Process Management
+# ================================
+Type=simple
+ExecStart=/usr/bin/node /opt/payments-agent/dist/index.js
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# ================================
+# Restart Policy
+# ================================
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# ================================
+# Logging
+# ================================
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=payments-agent
+
+# ================================
+# Security Hardening
+# ================================
+# Capabilities
+CapabilityBoundingSet=
+AmbientCapabilities=
+NoNewPrivileges=true
+
+# Filesystem
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/payments-agent/logs
+
+# Network
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+PrivateNetwork=false
+
+# System calls
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Other
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+MemoryDenyWriteExecute=false  # Needed for V8
+
+# ================================
+# Resource Limits
+# ================================
+LimitNOFILE=65535
+LimitNPROC=512
+MemoryMax=1G
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target
